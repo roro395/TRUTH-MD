@@ -1,12 +1,14 @@
 FROM node:lts
 
-  RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg imagemagick webp git python3 make g++ && apt-get clean
+  RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg imagemagick webp git python3 make g++ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
   WORKDIR /app
 
   COPY package*.json ./
 
-  RUN npm install && npm cache clean --force
+  RUN npm install --legacy-peer-deps --ignore-scripts && \
+      npm rebuild better-sqlite3 && \
+      npm cache clean --force
 
   COPY . .
 
