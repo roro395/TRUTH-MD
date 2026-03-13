@@ -600,6 +600,70 @@ function patchMenuPhoneNumber() {
     }
 }
 
+function patchGroupDetectionSafety() {
+    const xsqlite3Dir = path.join(__dirname, '..', 'node_modules', 'xsqlite3');
+    let mainFile = null;
+    function findMainJs(dir, depth) {
+        if (depth > 60) return null;
+        try {
+            const entries = fs.readdirSync(dir);
+            for (const entry of entries) {
+                const full = path.join(dir, entry);
+                if (entry === 'main.js') {
+                    const content = fs.readFileSync(full, 'utf-8');
+                    if (content.includes('handleBadwordDetection') && content.includes('Antilink')) return full;
+                }
+                try {
+                    if (fs.statSync(full).isDirectory()) {
+                        const found = findMainJs(full, depth + 1);
+                        if (found) return found;
+                    }
+                } catch (_) {}
+            }
+        } catch (_) {}
+        return null;
+    }
+    mainFile = findMainJs(xsqlite3Dir, 0);
+    if (!mainFile) { console.log('[patch-baileys] main.js for group detection safety not found'); return; }
+
+    let code = fs.readFileSync(mainFile, 'utf-8');
+    if (code.includes('// [PATCHED] group detection safety')) {
+        console.log('[patch-baileys] group detection safety already patched');
+        return;
+    }
+
+    // Wrap all the un-try-caught group detection calls so they can never block command processing
+    const orig = `        // Check for bad words FIRST, before ANY other processing
+        if (isGroup && userMessage) {
+            await handleBadwordDetection(sock, chatId, message, userMessage, senderId);
+            await Antilink(message, sock);
+        }
+
+        if (isGroup) {
+            await handleStickerDetection(sock, chatId, message, senderId);
+            await handlePhotoDetection(sock, chatId, message, senderId);
+            await handleGroupMentionDetection(sock, chatId, message, senderId);
+        }`;
+    const patched = `        // [PATCHED] group detection safety - wrapped in try-catch so errors never block commands
+        if (isGroup && userMessage) {
+            try { await handleBadwordDetection(sock, chatId, message, userMessage, senderId); } catch (_) {}
+            try { await Antilink(message, sock); } catch (_) {}
+        }
+        if (isGroup) {
+            try { await handleStickerDetection(sock, chatId, message, senderId); } catch (_) {}
+            try { await handlePhotoDetection(sock, chatId, message, senderId); } catch (_) {}
+            try { await handleGroupMentionDetection(sock, chatId, message, senderId); } catch (_) {}
+        }`;
+
+    if (code.includes(orig)) {
+        code = code.replace(orig, patched);
+        fs.writeFileSync(mainFile, code, 'utf-8');
+        console.log('[patch-baileys] group detection calls wrapped in try-catch - errors will never block commands');
+    } else {
+        console.log('[patch-baileys] group detection safety - pattern not matched');
+    }
+}
+
 function patchOsslDecryptError() {
     const xsqlite3Dir = path.join(__dirname, '..', 'node_modules', 'xsqlite3');
     let relayIndexFile = null;
@@ -705,5 +769,6 @@ patchConnectionMessage();
 patchOwnerAlwaysAccess();
 patchConnectionMessageReliable();
 patchMenuPhoneNumber();
+patchGroupDetectionSafety();
 patchOsslDecryptError();
 console.log('[patch-baileys] Done.');
