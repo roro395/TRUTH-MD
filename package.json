@@ -5,10 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
+    "start": "bash start.sh",
     "postinstall": "node scripts/patch-baileys.cjs",
     "heroku-postbuild": "npm rebuild sharp --build-from-source || true",
-    "prestart": "npm install --legacy-peer-deps --prefer-offline 2>/dev/null || npm install --legacy-peer-deps"
+    "start:panel": "bash start.sh"
   },
   "author": "courtney",
   "license": "ISC",
