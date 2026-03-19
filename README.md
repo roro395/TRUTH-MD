@@ -5,7 +5,7 @@
 <img src="https://files.catbox.moe/evpvot.jpg" width="400"/>
 
 <a href="https://whatsapp.com/channel/0029VbCafMZBA1f42UxcYW0D">
-  <img src="https://img.shields.io/badge/TRUTH%20MD-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" height="100"/>
+  <img src="https://img.shields.io/badge/TRUTH%20MD-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" height="150"/>
 </a>
 <br/><strong>WHATSAPP</strong>
 
